@@ -1,20 +1,11 @@
 #!/bin/bash
 
 token=$(cat /etc/hetzner-dns-token)
-search_name=$( echo $CERTBOT_DOMAIN | rev | cut -d'.' -f 1,2 | rev)
+domain_name=$( echo $CERTBOT_DOMAIN | rev | cut -d'.' -f 1,2 | rev)
+rr_name=_acme-challenge.${CERTBOT_DOMAIN%$domain_name}
+rr_type=TXT
+# Remove dot for non wildcard requests
+rr_name=${rr_name%.}
 
-zone_id=$(curl \
-        -H "Auth-API-Token: ${token}" \
-        "https://dns.hetzner.com/api/v1/zones?search_name=${search_name}" | \
-        jq ".\"zones\"[] | select(.name == \"${search_name}\") | .id" 2>/dev/null | tr -d '"')
-
-record_ids=$(curl \
-        -H "Auth-API-Token: $token" \
-        "https://dns.hetzner.com/api/v1/records?zone_id=$zone_id" | \
-       jq ".\"records\"[] | select(.name == \"_acme-challenge.${CERTBOT_DOMAIN}.\") | .id" 2>/dev/null | tr -d '"')
-
-for record_id in $record_ids
-do
-        curl -H "Auth-API-Token: $token" \
-                -X "DELETE" "https://dns.hetzner.com/api/v1/records/${record_id}" > /dev/null 2> /dev/null
-done
+curl -X "DELETE" "https://api.hetzner.cloud/v1/zones/${domain_name}/rrsets/${rr_name}/${rr_type}" \
+     -H "Authorization: Bearer ${token}" >/dev/null 2>/dev/null
