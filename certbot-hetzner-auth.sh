@@ -1,6 +1,6 @@
 #!/bin/bash
 
-token=$(cat /etc/hetzner-dns-token)
+token=$(cat /etc/hetzner-console-token)
 domain_name=$( echo $CERTBOT_DOMAIN | rev | cut -d'.' -f 1,2 | rev)
 rr_name=_acme-challenge.${CERTBOT_DOMAIN%$domain_name}
 ttl=60 # As of Dec 2025, 60 is the minimum TTL for Hetzner Zones
